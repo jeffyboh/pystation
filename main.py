@@ -1,5 +1,7 @@
 
 import os
+import subprocess
+from typing import Optional
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Header, Footer, DirectoryTree, Label, Tree
@@ -53,6 +55,7 @@ class FileExplorer(App):
 
     # This reactive variable will hold the path of the selected file.
     selected_path = var("No ROM file selected.")
+    selected_system = var("")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -74,15 +77,40 @@ class FileExplorer(App):
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
         """Called when the user selects a file in the directory tree."""
-        # Update the label with the selected file's path.
+       
+        # need to clean this up
+        if not self.selected_system:
+            return
         self.selected_path = str(event.path)
-        self.query_one("#info-label", Label).update(f"Selected file: {self.selected_path}")
+        default_core = default_cores.get(self.selected_system)
+        core = os.path.join(cores_folder, default_core)
+        rom = self.selected_path
+
+        program = "retroarch"
+        arg1 = "-L"
+        arg2 = core
+        arg3 = rom
+        
+        command = [program, arg1, arg2, arg3]
+        
+        result: Optional[subprocess.CompletedProcess]
+
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing command: {e}")
+            print(f"Stderr: {e.stderr}")
+        
+        self.query_one("#info-label", Label).update(f"Selected file: {result.stdout}")
 
     def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
         """Called when the user selects a directory in the directory tree."""
         # Update the label with the selected directory's path.
         self.selected_path = str(event.path)
-        self.query_one("#info-label", Label).update(f"Selected directory: {self.selected_path}")
+        head_tail = os.path.split(event.path)
+        self.selected_system = head_tail[1]
+
+        self.query_one("#info-label", Label).update(f"Selected System: {self.selected_system}")
 
     def action_quit(self) -> None:
         """Action to quit the application."""
@@ -91,8 +119,9 @@ class FileExplorer(App):
 if __name__ == "__main__":
     settings = SettingsLoader()
     paths = settings.get_all_paths()
-
+    default_cores = settings.get_default_cores()
     roms_folder = paths.get('roms_folder')
+    cores_folder = paths.get('cores_path')
 
     app = FileExplorer(roms_folder)
     app.run()

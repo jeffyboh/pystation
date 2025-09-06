@@ -43,6 +43,12 @@ class SettingsLoader:
         """
         return self.settings.get("paths", {})
 
+    def get_default_cores(self) -> dict:
+        """
+        Retrieves a dictionary of default cores for a system
+        """
+        return self.settings.get("default_cores", {})
+
 if __name__ == "__main__":
     # Example usage of the SettingsLoader class.
     
@@ -55,9 +61,12 @@ if __name__ == "__main__":
     bios_folder = settings_manager.get_path("paths", "bios_folder")
     roms_folder = settings_manager.get_path("paths", "roms_folder")
     images_folder = settings_manager.get_path("paths", "images_folder")
+    default_cores = settings_manager.get_default_cores()
 
     # Print the paths to verify they were loaded correctly.
     print(f"\nBIOS Path: {bios_folder}")
     print(f"ROMs Path: {roms_folder}")
     print(f"Images Path: {images_folder}")
+    print(f"Default cores: {default_cores}")
+    print(f"GBA core: {default_cores.get('gba')}")
 
