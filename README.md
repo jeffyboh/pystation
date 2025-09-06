@@ -1,5 +1,5 @@
 ## PyStation
-PyStation is an elegant, open-source front-end game launcher for the RetroArch emulator. Written in Python, it provides a clean and intuitive interface for browsing your game library, managing your ROMs, and launching your favorite retro titles with ease.
+PyStation is an open-source front-end game launcher for the RetroArch emulator. Written in Python, it provides a clean and intuitive interface for browsing your game library, managing your ROMs, and launching your favorite retro titles with ease.
 
 ## **Planned Features**
 - Seamless RetroArch Integration: Automatically detects your RetroArch installation and manages game launching.
