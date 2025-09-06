@@ -1,0 +1,6 @@
+
+[paths]
+bios_folder = "~/.local/share/pystation/bios/"
+roms_folder = "~/.local/share/pystation/roms/"
+images_folder = "~/.local/share/pystation/screenshots"
+
