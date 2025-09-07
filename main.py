@@ -7,7 +7,7 @@ from textual.containers import Container
 from textual.widgets import Header, Footer, DirectoryTree, Label, Tree
 from textual.reactive import var
 from settings_loader import SettingsLoader
-
+from filtered_directory_tree import FilteredDirectoryTree
 
 
 class FileExplorer(App):
@@ -64,10 +64,11 @@ class FileExplorer(App):
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
+        valid_extensions = {".gba", ".chd", ".zip"}
         yield Header(show_clock=False)
         with Container(id="main-container"):
             with Container(id="left-pane"):
-                yield DirectoryTree(self.roms_path, id="file-tree")
+                yield FilteredDirectoryTree(self.roms_path, id="file-tree")
             with Container(id="right-pane"):
                 yield Label("Right Pane: File Info")
                 yield Label("Use arrow keys to navigate the tree and press Enter to select an item.")
