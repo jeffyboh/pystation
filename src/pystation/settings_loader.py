@@ -5,11 +5,12 @@ class SettingsLoader:
     """
     A class to load application settings from a TOML file.
     """
-    def __init__(self, config_file: str = "config.toml"):
+    def __init__(self, config_file: str = "../config.toml"):
         """
         Initializes the settings loader and attempts to load the configuration.
         """
         self.config_file = Path(config_file)
+        print(f"Loading settings from: {self.config_file.resolve()}")
         self.settings = {}
         self.load_settings()
 
