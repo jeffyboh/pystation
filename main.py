@@ -16,8 +16,8 @@ class FileExplorer(App):
         super().__init__()
 
         self.paths = settings.get_all_paths()
-        self.roms_folder = self.paths.get('roms_folder')
-        self.cores_folder = self.paths.get('cores_path')
+        self.roms_path = self.paths.get('roms_path')
+        self.cores_path = self.paths.get('cores_path')
         self.default_cores = settings.get_default_cores()
 
     # Set the application's CSS.
@@ -67,7 +67,7 @@ class FileExplorer(App):
         yield Header(show_clock=False)
         with Container(id="main-container"):
             with Container(id="left-pane"):
-                yield DirectoryTree(self.roms_folder, id="file-tree")
+                yield DirectoryTree(self.roms_path, id="file-tree")
             with Container(id="right-pane"):
                 yield Label("Right Pane: File Info")
                 yield Label("Use arrow keys to navigate the tree and press Enter to select an item.")
@@ -77,7 +77,7 @@ class FileExplorer(App):
     def on_mount(self) -> None:
         """Called when app is mounted."""
         # Find the label that will display the selected file path
-        self.query_one("#info-label", Label).update(f"Current directory: {self.roms_folder}")
+        self.query_one("#info-label", Label).update(f"Current directory: {self.roms_path}")
         self.query_one("#file-tree", DirectoryTree).focus()
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
@@ -86,7 +86,8 @@ class FileExplorer(App):
             return
 
         selected_rom = str(event.path)
-        command = self.get_retroarch_command(self.cores_folder, selected_rom)
+        bios_path = self.paths.get('bios_path')
+        command = self.get_retroarch_command(self.cores_path, selected_rom, bios_path)
         
         # make sure we have a valid command object
         if not command:
@@ -112,17 +113,18 @@ class FileExplorer(App):
         """Action to quit the application."""
         self.exit()
 
-    def get_retroarch_command(self, cores_folder: str, rom_path: str) -> []:
+    def get_retroarch_command(self, cores_path: str, rom_path: str, bios_path: str) -> []:
         system_name = self.get_system_name(rom_path)
         # get the default_core for the system's rom we are going to launch
         default_core = self.default_cores.get(system_name)
         if not default_core:
             return
         # join the full qualified path to the core
-        core_path = os.path.join(cores_folder, default_core)
+        core_path = os.path.join(cores_path, default_core)
+        
         program = "retroarch"
         # return an object which will be used to provide all of the arguments to retroarch``
-        return [program, "-L", core_path, rom_path]
+        return [program, "-L", core_path, rom_path, "-s", bios_path]
 
     def get_system_name(self, rom_path: str) -> str:
         # parse the system_name out of the full path to the rom

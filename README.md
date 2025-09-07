@@ -15,6 +15,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 - **Python 3.8+:** PyStation requires a recent version of Python.
 - **RetroArch:** Ensure RetroArch is installed on your system. PyStation will need to be configured with the correct path to your RetroArch executable.
+- You will need to provide your own BIOS and ROM files.
+- BIOS files should be placed in the RetroArch system folder. This would be ~/.congig/retroarch/system on a Linux system.
+- Your ROMS can go anywhere, providing you specify the path in config.toml.
 
 ### **Installation**
 
