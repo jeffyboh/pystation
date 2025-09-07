@@ -44,6 +44,11 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+5. **To run the project**
+```bash
+cd src
+python -m pystation
+```
 
 ### **Contributing**
 
