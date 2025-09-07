@@ -12,9 +12,13 @@ from settings_loader import SettingsLoader
 
 class FileExplorer(App):
 
-    def __init__(self, root_folder: str = None):
+    def __init__(self, settings: SettingsLoader = None):
         super().__init__()
-        self.roms_folder = root_folder if root_folder else os.getcwd()
+
+        self.paths = settings.get_all_paths()
+        self.roms_folder = self.paths.get('roms_folder')
+        self.cores_folder = self.paths.get('cores_path')
+        self.default_cores = settings.get_default_cores()
 
     # Set the application's CSS.
     # The grid layout is used to create the two panes.
@@ -55,6 +59,7 @@ class FileExplorer(App):
 
     # This reactive variable will hold the path of the selected file.
     selected_path = var("No ROM file selected.")
+    selected_rom = var("")
     selected_system = var("")
 
     def compose(self) -> ComposeResult:
@@ -77,51 +82,61 @@ class FileExplorer(App):
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
         """Called when the user selects a file in the directory tree."""
-       
-        # need to clean this up
-        if not self.selected_system:
+        if not str(event.path):
             return
-        self.selected_path = str(event.path)
-        default_core = default_cores.get(self.selected_system)
-        core = os.path.join(cores_folder, default_core)
-        rom = self.selected_path
 
-        program = "retroarch"
-        arg1 = "-L"
-        arg2 = core
-        arg3 = rom
+        selected_rom = str(event.path)
+        command = self.get_retroarch_command(self.cores_folder, selected_rom)
         
-        command = [program, arg1, arg2, arg3]
+        # make sure we have a valid command object
+        if not command:
+            return
         
-        result: Optional[subprocess.CompletedProcess]
-
+        self.query_one("#info-label", Label).update(f"Arguments used: {command}")
+       
         try:
             result = subprocess.run(command, check=True, capture_output=True, text=True)
+            self.query_one("#info-label", Label).update(f"Selected file: {result.stdout}")
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")
             print(f"Stderr: {e.stderr}")
-        
-        self.query_one("#info-label", Label).update(f"Selected file: {result.stdout}")
 
     def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
         """Called when the user selects a directory in the directory tree."""
         # Update the label with the selected directory's path.
         self.selected_path = str(event.path)
-        head_tail = os.path.split(event.path)
-        self.selected_system = head_tail[1]
 
-        self.query_one("#info-label", Label).update(f"Selected System: {self.selected_system}")
+        self.query_one("#info-label", Label).update(f"Selected System: {self.selected_path}")
 
     def action_quit(self) -> None:
         """Action to quit the application."""
         self.exit()
 
+    def get_retroarch_command(self, cores_folder: str, rom_path: str) -> []:
+        system_name = self.get_system_name(rom_path)
+        # get the default_core for the system's rom we are going to launch
+        default_core = self.default_cores.get(system_name)
+        if not default_core:
+            return
+        # join the full qualified path to the core
+        core_path = os.path.join(cores_folder, default_core)
+        program = "retroarch"
+        # return an object which will be used to provide all of the arguments to retroarch``
+        return [program, "-L", core_path, rom_path]
+
+    def get_system_name(self, rom_path: str) -> str:
+        # parse the system_name out of the full path to the rom
+        system_name = os.path.split(os.path.split(rom_path)[0])[1]
+        return system_name
+
+
 if __name__ == "__main__":
     settings = SettingsLoader()
-    paths = settings.get_all_paths()
-    default_cores = settings.get_default_cores()
-    roms_folder = paths.get('roms_folder')
-    cores_folder = paths.get('cores_path')
+    #paths = settings.get_all_paths()
+    #default_cores = settings.get_default_cores()
+    #roms_folder = paths.get('roms_folder')
+    #cores_folder = paths.get('cores_path')
 
-    app = FileExplorer(roms_folder)
+    app = FileExplorer(settings)
     app.run()
+
