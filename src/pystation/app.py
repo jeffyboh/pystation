@@ -1,10 +1,12 @@
 
 import os
 import subprocess
+from pathlib import Path
 from typing import Optional
 from textual.app import App, ComposeResult
 from textual.containers import Container
-from textual.widgets import Header, Footer, DirectoryTree, Label, Tree
+from textual.widgets import Header, Footer, DirectoryTree, Label, Tree, OptionList
+from textual.widgets.option_list import Option
 from textual.reactive import var
 from pystation.settings_loader import SettingsLoader
 from pystation.widgets.filtered_directory_tree import FilteredDirectoryTree
@@ -68,17 +70,17 @@ class FileExplorer(App):
         yield Header(show_clock=False)
         with Container(id="main-container"):
             with Container(id="left-pane"):
-                yield FilteredDirectoryTree(self.roms_path, id="file-tree")
+                yield FilteredDirectoryTree(
+                    self.roms_path,
+                    allowed_systems=set(self.default_cores.keys()),
+                    id="file-tree",
+                )
             with Container(id="right-pane"):
-                yield Label("Right Pane: File Info")
-                yield Label("Use arrow keys to navigate the tree and press Enter to select an item.")
-                yield Label("", id="info-label")
+                yield OptionList(id="file-list")
         yield Footer()
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
-        # Find the label that will display the selected file path
-        self.query_one("#info-label", Label).update(f"Current directory: {self.roms_path}")
         self.query_one("#file-tree", DirectoryTree).focus()
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
@@ -93,22 +95,58 @@ class FileExplorer(App):
         # make sure we have a valid command object
         if not command:
             return
-        
-        self.query_one("#info-label", Label).update(f"Arguments used: {command}")
-       
+               
         try:
             result = subprocess.run(command, check=True, capture_output=True, text=True)
-            self.query_one("#info-label", Label).update(f"Selected file: {result.stdout}")
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")
             print(f"Stderr: {e.stderr}")
 
-    def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
-        """Called when the user selects a directory in the directory tree."""
-        # Update the label with the selected directory's path.
-        self.selected_path = str(event.path)
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        """Called when the user selects an option in the option list."""
+        selected_option = event.option
+        selected_rom = selected_option.id
+        bios_path = self.paths.get('bios_path')
+        command = self.get_retroarch_command(self.cores_path, selected_rom, bios_path)
+        
+        # make sure we have a valid command object
+        if not command:
+            return
+       
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing command: {e}")
+            print(f"Stderr: {e.stderr}")
+            
+    def on_tree_node_expanded(self, event: Tree.NodeExpanded) -> None:
+        """Called when a tree node is expanded."""
+        if event.node.data and Path(event.node.data).is_dir():
+            self.update_file_list(event.node.data)
 
-        self.query_one("#info-label", Label).update(f"Selected System: {self.selected_path}")
+    def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        """Called when a directory is selected in the tree."""
+        self.update_file_list(event.path)
+
+    def update_file_list(self, directory: str | Path) -> None:
+        """Refresh the right-pane file list for the selected directory."""
+        directory_path = Path(directory)
+
+        if not directory_path.is_dir():
+            file_list = self.query_one("#file-list", OptionList)
+            file_list.clear_options()
+            return
+
+        files = sorted(directory_path.iterdir(), key=lambda x: x.name)
+        file_options = []
+
+        for entry in files:
+            if entry.is_file() and not entry.name.startswith('.'):
+                file_options.append(Option(prompt=entry.name, id=str(entry)))
+
+        file_list = self.query_one("#file-list", OptionList)
+        file_list.clear_options()
+        file_list.add_options(file_options)
 
     def action_quit(self) -> None:
         """Action to quit the application."""

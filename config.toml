@@ -1,7 +1,8 @@
 
 [paths]
 bios_path = "~/.config/retroarch/system"
-roms_path = "~/.config/pystation/roms"
+;roms_path = "~/.config/pystation/roms"
+roms_path = "~/retrogames/master_library/roms"
 cores_path = "/usr/lib/libretro"
 
 [default_cores]

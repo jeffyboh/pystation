@@ -16,6 +16,7 @@ dist/
 # Editors and IDEs
 .idea/  # IntelliJ IDEA / PyCharm
 .vscode/ # VS Code
+.zed/
 .DS_Store # macOS
 Thumbs.db # Windows
 
